@@ -1,0 +1,172 @@
+{% extends "base.html" %} {%block title%}添加节点{%endblock%} {%block content%}
+<form action="/node/add" method="post">
+  <input type="text" id="scheme" name="scheme" v-model="scheme" />
+  <div class="form-group">
+    <label for="name">名称</label>
+    <input type="text" class="form-control" id="name" name="name" required />
+  </div>
+  <div class="form-group">
+    <label for="host">服务器</label>
+    <input type="text" class="form-control" id="host" name="host" required />
+  </div>
+  <div class="form-group">
+    <label for="port">端口</label>
+    <input
+      type="number"
+      class="form-control"
+      id="port"
+      name="port"
+      value="443"
+      required
+    />
+  </div>
+  <ul class="nav nav-pills nav-justified mb-3">
+    <li class="nav-item">
+      <a
+        :class="is_trojan?'nav-link active':'nav-link'"
+        @click="scheme='trojan'"
+        href="javascript:;"
+        >Trojan</a
+      >
+    </li>
+    <li class="nav-item">
+      <a
+        :class="is_vmess?'nav-link active':'nav-link'"
+        @click="scheme='vmess'"
+        href="javascript:;"
+        >VMESS</a
+      >
+    </li>
+    <li class="nav-item">
+      <a
+        :class="is_shadowsocks?'nav-link active':'nav-link'"
+        @click="scheme='shadowsocks'"
+        href="javascript:;"
+        >Shadowsocks</a
+      >
+    </li>
+    <li class="nav-item">
+      <a
+        :class="is_socks?'nav-link active':'nav-link'"
+        @click="scheme='socks'"
+        href="javascript:;"
+        >Socks</a
+      >
+    </li>
+    <li class="nav-item">
+      <a
+        :class="is_http?'nav-link active':'nav-link'"
+        @click="scheme='http'"
+        href="javascript:;"
+        >HTTP</a
+      >
+    </li>
+  </ul>
+  <!-- trojan -->
+  <div v-if="is_trojan">
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input
+        type="text"
+        class="form-control"
+        id="password"
+        name="password"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="path">WS 路径</label>
+      <input type="text" class="form-control" id="path" name="path" />
+    </div>
+  </div>
+  <!-- /trojan -->
+  <!-- vmess -->
+  <div v-if="is_vmess">
+    <div class="form-group">
+      <label for="uuid">UUID</label>
+      <input type="text" class="form-control" id="uuid" name="uuid" required />
+    </div>
+    <div class="form-group">
+      <label for="alter">Alter ID</label>
+      <input
+        type="number"
+        class="form-control"
+        id="alter"
+        name="alter"
+        value="64"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="path">WS 路径</label>
+      <input type="text" class="form-control" id="path" name="path" required />
+    </div>
+    <div class="form-group">
+      <label for="cipher">加密算法</label>
+      <select class="form-control" id="cipher" name="cipher">
+        <option value="auto">自动</option>
+      </select>
+    </div>
+  </div>
+  <!-- /vmess -->
+  <!-- shadowsocks -->
+  <div v-if="is_shadowsocks">
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input
+        type="text"
+        class="form-control"
+        id="password"
+        name="password"
+        required
+      />
+    </div>
+    <div class="form-group">
+      <label for="cipher">加密算法</label>
+      <select class="form-control" id="cipher" name="cipher">
+        <option value="auto">自动</option>
+      </select>
+    </div>
+  </div>
+  <!-- /shadowsocks -->
+  <!-- socks/http -->
+  <div v-if="is_socks || is_http">
+    <div class="form-group">
+      <label for="username">用户名</label>
+      <input type="text" class="form-control" id="username" name="username" />
+    </div>
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input type="text" class="form-control" id="password" name="password" />
+    </div>
+  </div>
+  <!-- /socks/http -->
+  <button type="submit" class="btn btn-primary">提交</button>
+</form>
+{%endblock%} {% block js%}
+<script>
+  new Vue({
+    el: "#app",
+    data: {
+      scheme: "trojan",
+    },
+    computed: {
+      is_trojan() {
+        return this.scheme == "trojan";
+      },
+      is_vmess() {
+        return this.scheme == "vmess";
+      },
+      is_shadowsocks() {
+        return this.scheme == "shadowsocks";
+      },
+      is_socks() {
+        return this.scheme == "socks";
+      },
+      is_http() {
+        return this.scheme == "http";
+      },
+    },
+  });
+</script>
+{%endblock%}
