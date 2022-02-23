@@ -4,6 +4,7 @@ use axum::response::IntoResponse;
 pub enum AppErrorType {
     Db,
     Template,
+    NotFound,
 }
 
 #[derive(Debug)]
@@ -31,11 +32,29 @@ impl AppError {
     pub fn from_str(msg: &str, types: AppErrorType) -> Self {
         Self::new(Some(msg.to_string()), None, types)
     }
+    pub fn not_found_msg_opt(msg: Option<&str>) -> Self {
+        let msg = match msg {
+            Some(msg) => msg,
+            None => "没有满足条件的数据",
+        };
+        Self::from_str(msg, AppErrorType::NotFound)
+    }
+    pub fn not_found_msg(msg: &str) -> Self {
+        Self::not_found_msg_opt(Some(msg))
+    }
+    pub fn not_found() -> Self {
+        Self::not_found_msg_opt(None)
+    }
 }
 
 impl From<askama::Error> for AppError {
     fn from(err: askama::Error) -> Self {
         Self::from_err(Box::new(err), AppErrorType::Template)
+    }
+}
+impl From<tokio_postgres::Error> for AppError {
+    fn from(err: tokio_postgres::Error) -> Self {
+        Self::from_err(Box::new(err), AppErrorType::Db)
     }
 }
 

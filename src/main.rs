@@ -4,7 +4,9 @@ mod db;
 mod error;
 mod form;
 mod handler;
+mod helper;
 mod html;
+mod model;
 mod types;
 
 type Result<T> = std::result::Result<T, error::AppError>;
