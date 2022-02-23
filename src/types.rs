@@ -18,7 +18,7 @@ pub struct Node {
     pub password: Option<String>,
     pub path: Option<String>,
     pub uuid: Option<String>,
-    pub alter_id: Option<u8>,
+    pub alter_id: Option<i8>,
     pub cipher: Option<String>,
     pub username: Option<String>,
     pub scheme: Scheme,
@@ -34,7 +34,7 @@ pub struct Cfips {
     pub id: i32,
     pub ip: String,
     pub label: String,
-    pub code :String,
+    pub code: String,
 }
 
 #[derive(Deserialize, Debug)]
