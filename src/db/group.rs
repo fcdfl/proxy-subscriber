@@ -10,7 +10,7 @@ pub(crate) async fn create(client: &Client, name: String) -> Result<GroupID> {
     let group_uuid = helper::uuid();
     super::insert(
         client,
-        "INSERT INTO groups (name, url) VALUES($1, $2) RETURNING id",
+        "INSERT INTO groups (name, url,is_del) VALUES($1, $2, false) RETURNING id",
         &[&name, &group_uuid],
         "添加分组失败",
     )

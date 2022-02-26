@@ -1,20 +1,30 @@
+use std::sync::Arc;
+
 use askama::Template;
 use axum::{
-    extract::Form,
+    extract::{Extension, Form, Path, Query},
     http::{header, HeaderMap, StatusCode},
     response::Html,
 };
+use deadpool_postgres::Client;
+use serde::Deserialize;
 
 use crate::{
+    args::ArgsMsgOnly,
+    db::group,
     error::AppError,
     form,
-    html::{GroupAdd, Index, NodeAdd},
-    Result,
+    html::{GroupAdd, GroupIndex, Index, NodeAdd},
+    model, Result,
 };
 
 type HtmlResponse = Html<String>;
 type HtmlResponseResult = Result<HtmlResponse>;
 type RedirectResult = Result<(StatusCode, HeaderMap, ())>;
+
+async fn get_client(state: &model::AppState) -> Result<Client> {
+    state.pool.get().await.map_err(AppError::from)
+}
 
 fn log_error(handler: &str) -> Box<dyn Fn(AppError) -> AppError> {
     let handler = handler.to_string();
@@ -54,11 +64,39 @@ pub(crate) async fn group_add_ui() -> HtmlResponseResult {
     let tpl = GroupAdd {};
     render(tpl).map_err(log_error(handler))
 }
-pub(crate) async fn group_add(Form(frm): Form<form::GroupCreate>) -> RedirectResult {
-    tracing::debug!("{:?}", frm);
+pub(crate) async fn group_index(
+    Extension(state): Extension<Arc<model::AppState>>,
+    Query(args): Query<ArgsMsgOnly>,
+) -> HtmlResponseResult {
+    let handler = "group_index";
+    let client = get_client(&state).await.map_err(log_error(handler))?;
+    let groups = group::all(&client).await.map_err(log_error(handler))?;
+    let tpl = GroupIndex { args, list: groups };
+    render(tpl).map_err(log_error(handler))
+}
+pub(crate) async fn group_add(
+    Extension(state): Extension<Arc<model::AppState>>,
+    Form(frm): Form<form::GroupCreate>,
+) -> RedirectResult {
+    let handler = "group_add";
+    let client = get_client(&state).await.map_err(log_error(handler))?;
+    group::create(&client, frm.name)
+        .await
+        .map_err(log_error(handler))?;
     redirect_with_msg("/admin/group", "分组添加成功")
 }
 
+pub(crate) async fn group_del(
+    Extension(state): Extension<Arc<model::AppState>>,
+    Path(id): Path<i32>,
+) -> RedirectResult {
+    let handler = "group_del";
+    let client = get_client(&state).await.map_err(log_error(handler))?;
+    group::del_or_restore(&client, id, true)
+        .await
+        .map_err(log_error(handler))?;
+    redirect_with_msg("/admin/group", "分组删除成功")
+}
 pub(crate) async fn node_add_ui() -> HtmlResponseResult {
     let handler = "node_add_ui";
     let tpl = NodeAdd {};

@@ -2,6 +2,10 @@ use postgres_types::{FromSql, ToSql};
 use serde::{Deserialize, Serialize};
 use tokio_pg_mapper_derive::PostgresMapper;
 
+pub struct AppState {
+    pub pool: deadpool_postgres::Pool,
+}
+
 #[derive(PostgresMapper, Serialize, Deserialize)]
 #[pg_mapper(table = "groups")]
 pub struct GroupID {

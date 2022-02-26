@@ -57,6 +57,11 @@ impl From<tokio_postgres::Error> for AppError {
         Self::from_err(Box::new(err), AppErrorType::Db)
     }
 }
+impl From<deadpool_postgres::PoolError> for AppError {
+    fn from(err: deadpool_postgres::PoolError) -> Self {
+        Self::from_err(Box::new(err), AppErrorType::Db)
+    }
+}
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {

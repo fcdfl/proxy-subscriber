@@ -1,2 +1,28 @@
 {% extends "base.html" %}
 {%block title%}分组{%endblock%}
+{%block content%}
+{% if args.msg.is_some() %}
+<div class="alert alert-info" role="alert">
+    {{ args.msg() }}
+</div>
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>分组名称</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in list %}
+        <tr>
+            <td>{{ row.name }}</td>
+            <td>
+                <a href="/admin/group/sub/{{row.id}}" class="btn btn-outline-primary btn-sm">订阅</a>
+                <a href="/admin/group/del/{{row.id}}" class="btn btn-outline-danger btn-sm" onclick="if(!confirm('确定删除[{{row.name}}]?')){return false;}">删除</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{%endblock%}

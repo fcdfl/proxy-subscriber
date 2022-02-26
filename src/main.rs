@@ -1,5 +1,10 @@
-use axum::{routing::get, Router};
+use std::sync::Arc;
 
+use axum::{routing::get, AddExtensionLayer, Router};
+use dotenv::dotenv;
+
+mod args;
+mod config;
 mod db;
 mod error;
 mod form;
@@ -18,20 +23,29 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
+    dotenv().ok();
+    let cfg = config::Config::from_env().expect("读取配置失败");
+    let pool = cfg
+        .pg
+        .create_pool(None, tokio_postgres::NoTls)
+        .expect("数据库初始化失败");
+
+    let admin_group = Router::new()
+        .route("/", get(handler::group_index))
+        .route("/add", get(handler::group_add_ui).post(handler::group_add))
+        .route("/del/:id", get(handler::group_del));
+    let admin_node = Router::new().route("/add", get(handler::node_add_ui).post(handler::node_add));
     let admin = Router::new()
         .route("/", get(handler::index))
-        .route(
-            "/group/add",
-            get(handler::group_add_ui).post(handler::group_add),
-        )
-        .route(
-            "/node/add",
-            get(handler::node_add_ui).post(handler::node_add),
-        );
+        .nest("/group", admin_group)
+        .nest("/node", admin_node);
 
-    let app = Router::new().nest("/admin", admin);
+    let app = Router::new()
+        .nest("/admin", admin)
+        .layer(AddExtensionLayer::new(Arc::new(model::AppState { pool })));
 
-    axum::Server::bind(&"127.0.0.1:9527".parse().unwrap())
+    tracing::info!("Web服务运行于：http://{}", &cfg.web.addr);
+    axum::Server::bind(&cfg.web.addr.parse().unwrap())
         .serve(app.into_make_service())
         .await
         .unwrap();
