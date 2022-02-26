@@ -34,7 +34,14 @@ async fn main() {
         .route("/", get(handler::group_index))
         .route("/add", get(handler::group_add_ui).post(handler::group_add))
         .route("/del/:id", get(handler::group_del));
-    let admin_node = Router::new().route("/add", get(handler::node_add_ui).post(handler::node_add));
+    let admin_node = Router::new()
+        .route("/", get(handler::node_index))
+        .route("/add", get(handler::node_add_ui).post(handler::node_add))
+        .route(
+            "/edit/:id",
+            get(handler::node_edit_ui).post(handler::node_edit),
+        )
+        .route("/del/:id", get(handler::node_del));
     let admin = Router::new()
         .route("/", get(handler::index))
         .nest("/group", admin_group)

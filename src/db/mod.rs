@@ -7,7 +7,9 @@ use tokio_postgres::{
 use crate::{error::AppError, Result};
 
 pub mod group;
+pub mod node;
 
+const DEFAULT_PAGE_SIZE: u8 = 30;
 type ParamterItem = (dyn ToSql + Sync);
 type Paramters<'a> = &'a [&'a ParamterItem];
 
@@ -100,4 +102,53 @@ where
 {
     let r: i64 = query_col(client, sql, params).await?;
     Ok(r as u64)
+}
+
+async fn paginate<'a, C, T>(
+    client: &C,
+    sql: &str,
+    count_sql: &str,
+    params: Paramters<'a>,
+    page: u32,
+) -> Result<Paginate<Vec<T>>>
+where
+    C: GenericClient,
+    T: FromTokioPostgresRow,
+{
+    let total_record = count::<C>(client, count_sql, params).await?;
+    let list = query::<C, T>(client, sql, params).await?;
+    Ok(Paginate::new(total_record, page, list))
+}
+
+pub struct Paginate<T> {
+    pub total_record: u64,
+    pub page: u32,
+    pub page_size: u8,
+    pub total_page: u64,
+    pub data: T,
+}
+
+impl<T> Paginate<T> {
+    pub fn new_with_page_size(total_record: u64, page: u32, page_size: u8, data: T) -> Self {
+        let total_page = f64::ceil(total_record as f64 / page_size as f64) as u64;
+        Self {
+            total_record,
+            page,
+            page_size,
+            total_page,
+            data,
+        }
+    }
+    pub fn new(total_record: u64, page: u32, data: T) -> Self {
+        Self::new_with_page_size(total_record, page, DEFAULT_PAGE_SIZE, data)
+    }
+    pub fn has_prev(&self) -> bool {
+        self.page > 0
+    }
+    pub fn has_next(&self) -> bool {
+        (self.page as u64) < (self.total_page - 1)
+    }
+    pub fn is_active(&self, i: &u64) -> bool {
+        (*i) == (self.page as u64)
+    }
 }

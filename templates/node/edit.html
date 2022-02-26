@@ -1,21 +1,21 @@
-{% extends "base.html" %} {%block title%}添加节点{%endblock%} {%block content%}
-<form action="/admin/node/add" method="post">
+{% extends "base.html" %} {%block title%}修改节点{%endblock%} {%block content%}
+<form action="/admin/node/edit/{{item.id}}" method="post">
     <input type="hidden" id="scheme" name="scheme" v-model="scheme" />
     <div class="form-group">
         <label for="group_id">分组</label>
         <select class="form-control" name="group_id" id="group_id" required>
             {% for g in groups %}
-            <option value="{{g.id}}">{{g.name}}</option>
+            <option value="{{g.id}}" {%if item.group_id==g.id%} selected{%endif%}>{{g.name}}</option>
             {%endfor%}
         </select>
     </div>
     <div class="form-group">
         <label for="name">名称</label>
-        <input type="text" class="form-control" id="name" name="name" required />
+        <input type="text" class="form-control" id="name" name="name" value="{{item.name}}" required />
     </div>
     <div class="form-group">
         <label for="host">服务器</label>
-        <input type="text" class="form-control" id="host" name="host" required />
+        <input type="text" class="form-control" id="host" name="host" value="{{item.host}}" required />
     </div>
     <div class="form-group">
         <label for="port">端口</label>
@@ -24,7 +24,7 @@
                 class="form-control"
                 id="port"
                 name="port"
-                value="443"
+                value="{{item.port}}"
                 required
                 />
     </div>
@@ -79,12 +79,15 @@
                     class="form-control"
                     id="password"
                     name="password"
+                    value="{{item.password()}}"
                     required
                     />
         </div>
         <div class="form-group">
             <label for="path">WS 路径</label>
-            <input type="text" class="form-control" id="path" name="path" />
+            <input type="text" class="form-control" id="path" name="path"
+                    value="{{item.path()}}"
+            />
         </div>
     </div>
     <!-- /trojan -->
@@ -92,7 +95,9 @@
     <div v-if="is_vmess">
         <div class="form-group">
             <label for="uuid">UUID</label>
-            <input type="text" class="form-control" id="uuid" name="uuid" required />
+            <input type="text" class="form-control" id="uuid" name="uuid"
+                    value="{{item.uuid()}}"
+            required />
         </div>
         <div class="form-group">
             <label for="alter_id">Alter ID</label>
@@ -101,17 +106,22 @@
                     class="form-control"
                     id="alter"
                     name="alter_id"
-                    value="64"
+                    value="{{item.alter_id()}}"
                     required
                     />
         </div>
         <div class="form-group">
             <label for="path">WS 路径</label>
-            <input type="text" class="form-control" id="path" name="path" required />
+            <input type="text" class="form-control" id="path" name="path"
+                    value="{{item.path()}}"
+            required />
         </div>
         <div class="form-group">
             <label for="cipher">加密算法</label>
             <select class="form-control" id="cipher" name="cipher">
+                {%if !item.cipher().is_empty() %}
+                <option value="{{item.cipher()}}" selected>{{item.cipher()}}</option>
+                {%endif%}
                 <option value="auto">auto</option>
                 <option value="aes-128-gcm">aes-128-gcm</option>
                 <option value="chacha20-poly1305">chacha20-poly1305</option>
@@ -129,12 +139,16 @@
                     class="form-control"
                     id="password"
                     name="password"
+                    value="{{item.password()}}"
                     required
                     />
         </div>
         <div class="form-group">
             <label for="cipher">加密算法</label>
             <select class="form-control" id="cipher" name="cipher">
+                {%if !item.cipher().is_empty() %}
+                <option value="{{item.cipher()}}" selected>{{item.cipher()}}</option>
+                {%endif%}
                 <option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option>
                 <option value="aes-128-gcm">aes-128-gcm</option>
                 <option value="aes-192-gcm">aes-192-gcm</option>
@@ -157,11 +171,15 @@
     <div v-if="is_socks || is_http">
         <div class="form-group">
             <label for="username">用户名</label>
-            <input type="text" class="form-control" id="username" name="username" />
+            <input type="text" class="form-control" id="username" name="username" 
+                    value="{{item.username()}}"
+            />
         </div>
         <div class="form-group">
             <label for="password">密码</label>
-            <input type="text" class="form-control" id="password" name="password" />
+            <input type="text" class="form-control" id="password" name="password"
+                    value="{{item.password()}}"
+            />
         </div>
     </div>
     <!-- /socks/http -->
@@ -172,7 +190,7 @@
     new Vue({
             el: "#app",
             data: {
-                    scheme: "trojan",
+                    scheme: "{{ item.scheme }}".toLowerCase(),
                 },
             computed: {
                     is_trojan() {
