@@ -6,6 +6,7 @@ use tokio_postgres::{
 
 use crate::{error::AppError, Result};
 
+pub mod cfip;
 pub mod group;
 pub mod node;
 

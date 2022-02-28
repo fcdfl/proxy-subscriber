@@ -9,12 +9,14 @@ use axum::{
 use deadpool_postgres::Client;
 
 use crate::{
-    args::{ArgsForNode, ArgsMsgOnly},
+    args::{ArgsForNode, ArgsForSub, ArgsMsgOnly},
     db::{group, node},
     error::AppError,
     form,
     html::{GroupAdd, GroupIndex, Index, NodeAdd, NodeEdit, NodeIndex},
-    model, Result,
+    model,
+    types::{ShadowsocksNode, SimpleNode, TrojanNode, VmessNode},
+    Result,
 };
 
 type HtmlResponse = Html<String>;
@@ -161,4 +163,42 @@ pub(crate) async fn node_del(
         .await
         .map_err(log_error(handler))?;
     redirect_with_msg("/admin/node", "节点删除成功")
+}
+pub(crate) async fn subscriber(
+    Extension(state): Extension<Arc<model::AppState>>,
+    Path(uuid): Path<String>,
+    Query(args): Query<ArgsForSub>,
+) -> Result<(HeaderMap, String)> {
+    let handler = "subscriber";
+    let client = get_client(&state).await.map_err(log_error(handler))?;
+    let list = node::subscriber(&client, uuid)
+        .await
+        .map_err(log_error(handler))?;
+    let mut hm = HeaderMap::new();
+    if args.c == "clash" {
+        let mut output = vec![];
+        list.iter().for_each(|n| match n.scheme {
+            model::Scheme::Trojan => {
+                output.push(serde_yaml::to_value(&TrojanNode::from(n)).unwrap())
+            }
+            model::Scheme::Vmess => output.push(serde_yaml::to_value(&VmessNode::from(n)).unwrap()),
+            model::Scheme::Shadowsocks => {
+                output.push(serde_yaml::to_value(&ShadowsocksNode::from(n)).unwrap())
+            }
+            model::Scheme::Socks => {
+                output.push(serde_yaml::to_value(&SimpleNode::socks(n)).unwrap())
+            }
+            model::Scheme::Http => output.push(serde_yaml::to_value(&SimpleNode::http(n)).unwrap()),
+        });
+        hm.insert(header::CONTENT_TYPE, "application/yaml".parse().unwrap());
+        return Ok((hm, serde_yaml::to_string(&output).unwrap()));
+    }
+    if args.c == "v2ray" {
+        hm.insert(
+            header::CONTENT_TYPE,
+            "application/json;charset=utf-8".parse().unwrap(),
+        );
+        return Ok((hm, "".to_string()));
+    }
+    Err(AppError::invalid_param_msg("invalid request"))
 }

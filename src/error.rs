@@ -5,6 +5,8 @@ pub enum AppErrorType {
     Db,
     Template,
     NotFound,
+    InvalidParamter,
+    Yaml,
 }
 
 #[derive(Debug)]
@@ -45,6 +47,12 @@ impl AppError {
     pub fn not_found() -> Self {
         Self::not_found_msg_opt(None)
     }
+    pub fn invalid_param_msg(msg: &str) -> Self {
+        Self::from_str(msg, AppErrorType::InvalidParamter)
+    }
+    pub fn invalid_param() -> Self {
+        Self::invalid_param_msg("参数错误")
+    }
 }
 
 impl From<askama::Error> for AppError {
@@ -60,6 +68,11 @@ impl From<tokio_postgres::Error> for AppError {
 impl From<deadpool_postgres::PoolError> for AppError {
     fn from(err: deadpool_postgres::PoolError) -> Self {
         Self::from_err(Box::new(err), AppErrorType::Db)
+    }
+}
+impl From<serde_yaml::Error> for AppError {
+    fn from(err: serde_yaml::Error) -> Self {
+        Self::from_err(Box::new(err), AppErrorType::Yaml)
     }
 }
 

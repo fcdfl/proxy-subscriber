@@ -30,6 +30,9 @@ async fn main() {
         .create_pool(None, tokio_postgres::NoTls)
         .expect("数据库初始化失败");
 
+    let frontend = Router::new()
+        .route("/", get(handler::index))
+        .route("/s/:uuid", get(handler::subscriber));
     let admin_group = Router::new()
         .route("/", get(handler::group_index))
         .route("/add", get(handler::group_add_ui).post(handler::group_add))
@@ -43,11 +46,11 @@ async fn main() {
         )
         .route("/del/:id", get(handler::node_del));
     let admin = Router::new()
-        .route("/", get(handler::index))
         .nest("/group", admin_group)
         .nest("/node", admin_node);
 
     let app = Router::new()
+        .nest("", frontend)
         .nest("/admin", admin)
         .layer(AddExtensionLayer::new(Arc::new(model::AppState { pool })));
 

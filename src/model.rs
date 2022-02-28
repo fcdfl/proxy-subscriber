@@ -98,15 +98,33 @@ impl Node {
         }
     }
 }
-
 impl ToClash for Node {
     fn to_clash(&self) -> String {
-        unimplemented!()
+        unreachable!()
     }
 }
 impl ToV2ray for Node {
     fn to_v2ray(&self) -> String {
-        unimplemented!()
+        let url = match self.scheme {
+            Scheme::Vmess => {
+                let u = format!("");
+                u
+            }
+            Scheme::Trojan => {
+                format!(
+                    "{password}@{host}:{port}?sni={host}#{name}",
+                    password = self.password(),
+                    host = self.host,
+                    name = self.name, // url encode
+                    port = self.port,
+                )
+            }
+            Scheme::Socks => {
+                format!("{host}:{port}", host = self.host, port = self.port)
+            }
+            _ => "".to_string(),
+        };
+        format!("{}://{}", self.scheme, url)
     }
 }
 

@@ -78,3 +78,13 @@ pub async fn del_or_restore(client: &Client, id: i32, is_del: bool) -> Result<bo
     let n = super::del_or_restore(client, "nodes", is_del, &id).await?;
     Ok(n > 0)
 }
+pub async fn subscriber(client: &Client, uuid: String) -> Result<Vec<model::Node>> {
+    let sql = "SELECT n.id, group_id, n.name, scheme, host, port, password, path, uuid, alter_id, cipher, username,n.is_del
+                FROM nodes AS n 
+                INNER JOIN groups AS g
+                ON n.group_id=g.id
+                WHERE g.is_del=FALSE 
+                AND n.is_del=FALSE
+                AND g.url=$1";
+    super::query(client, sql, &[&uuid]).await
+}
